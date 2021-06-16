@@ -223,7 +223,7 @@ class DeepDaze(nn.Module):
                 image_piece = rand_cutout(out, size, center_bias=self.center_bias, center_focus=self.center_focus)
                 #Implement experimental resampling.
                 if self.experimental_resample:
-                    image_piece = resample(image_piece, (self.image_width, self.image_width), align_corners=False, mode='bilinear')
+                    image_piece = resample(image_piece, (224, 224), align_corners=False, mode='bilinear')
                 else:
                     image_piece = interpolate(image_piece, self.input_resolution)
                 image_pieces.append(image_piece)
@@ -234,7 +234,7 @@ class DeepDaze(nn.Module):
         image_pieces = torch.cat([self.normalize_image(piece) for piece in image_pieces])
         
         # calc image embedding
-        with autocast(enabled=False):
+        with autocast(enabled=True):
             image_embed = self.perceptor.encode_image(image_pieces)
             
         # calc loss
