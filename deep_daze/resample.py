@@ -52,8 +52,8 @@ to_nonlinear_srgb = odd(_to_nonlinear_srgb)
 
 
 def resample(input, size, method, align_corners=True, is_srgb=False, mode='bicubic'):
-	#methods: 'bigsleep', 'vqgan'
-	assert method in ['bigsleep', 'vqgan'], "Incorrect resample method"
+    #methods: 'bigsleep', 'vqgan'
+    assert method in ['bigsleep', 'vqgan'], "Incorrect resample method"
 
     n, c, h, w = input.shape
     dh, dw = size
