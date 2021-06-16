@@ -1,6 +1,7 @@
 from collections import OrderedDict
 from typing import Tuple, Union
 
+import numpy as np
 import torch
 import torch.nn.functional as F
 from torch import nn
@@ -209,7 +210,7 @@ class Bottleneck(nn.Module):
         self.conv3 = nn.Conv2d(planes, planes * self.expansion, 1, bias=False)
         self.bn3 = nn.BatchNorm2d(planes * self.expansion)
 
-        self.relu = nn.ReLU(inplace=True)
+        self.relu = nn.GELU()
         self.downsample = None
         self.stride = stride
 
@@ -295,7 +296,7 @@ class ModifiedResNet(nn.Module):
         self.conv3 = nn.Conv2d(width // 2, width, kernel_size=3, padding=1, bias=False)
         self.bn3 = nn.BatchNorm2d(width)
         self.avgpool = nn.AvgPool2d(2)
-        self.relu = nn.ReLU(inplace=True)
+        self.relu = nn.GELU()
 
         # residual layers
         self._inplanes = width  # this is a *mutable* variable used during construction
@@ -400,10 +401,11 @@ class VisualTransformer(nn.Module):
         self.ln_post = LayerNorm(width)
         self.proj = nn.Parameter(scale * torch.randn(width, output_dim))
 
-    def forward(self, x: torch.Tensor):
+    def forward(self, x: torch.Tensor, GiveConv1=False):
         x = self.conv1(x)  # shape = [*, width, grid, grid]
         x = x.reshape(x.shape[0], x.shape[1], -1)  # shape = [*, width, grid ** 2]
         x = x.permute(0, 2, 1)  # shape = [*, grid ** 2, width]
+        y = x
         x = torch.cat([self.class_embedding.to(x.dtype) + torch.zeros(x.shape[0], 1, x.shape[-1], dtype=x.dtype, device=x.device), x], dim=1)  # shape = [*, grid ** 2 + 1, width]
         x = x + self.positional_embedding.to(x.dtype)
         x = self.ln_pre(x)
@@ -417,7 +419,10 @@ class VisualTransformer(nn.Module):
         if self.proj is not None:
             x = x @ self.proj
 
-        return x
+        if GiveConv1 == True:
+            return x, y
+        else:
+            return x
 
 
 class CLIP(nn.Module):
@@ -472,7 +477,7 @@ class CLIP(nn.Module):
         self.ln_final = LayerNorm(transformer_width)
 
         self.text_projection = nn.Parameter(torch.empty(transformer_width, embed_dim))
-        self.logit_scale = nn.Parameter(torch.ones([]))
+        self.logit_scale = nn.Parameter(torch.ones([]) * np.log(1 / 0.07))
 
         self.initialize_parameters()
 
@@ -517,8 +522,8 @@ class CLIP(nn.Module):
     def dtype(self):
         return self.visual.conv1.weight.dtype
 
-    def encode_image(self, image):
-        return self.visual(image.type(self.dtype))
+    def encode_image(self, image, GiveConv1=False):
+        return self.visual(image.type(self.dtype), GiveConv1=False)
 
     def encode_text(self, text):
         x = self.token_embedding(text).type(self.dtype)  # [batch_size, n_ctx, d_model]
@@ -535,8 +540,8 @@ class CLIP(nn.Module):
 
         return x
 
-    def forward(self, image, text):
-        image_features = self.encode_image(image)
+    def forward(self, image, text, GiveConv1=False):
+        image_features = self.encode_image(image, GiveConv1=False)
         text_features = self.encode_text(text)
 
         # normalized features
@@ -613,7 +618,7 @@ def build_model(state_dict: dict):
 
     convert_weights(model)
     model.load_state_dict(state_dict)
-    return model.eval()
+    return model.eval().requires_grad_(False)
 
 import html
 from functools import lru_cache
