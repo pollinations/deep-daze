@@ -21,7 +21,7 @@ import torchvision.transforms as T
 from tqdm import trange, tqdm
 
 from .clip import load, tokenize
-from .resample import *
+from .resample import resample
 
 
 # Helpers
@@ -140,6 +140,7 @@ class DeepDaze(nn.Module):
             center_focus=2,
             hidden_size=256,
             averaging_weight=0.3,
+            experimental_resample=False
     ):
         super().__init__()
         # load clip
@@ -184,6 +185,7 @@ class DeepDaze(nn.Module):
         self.center_bias = center_bias
         self.center_focus = center_focus
         self.averaging_weight = averaging_weight
+        self.experimental_resample = experimental_resample
         
     def sample_sizes(self, lower, upper, width, gauss_mean):
         if self.gauss_sampling:
@@ -215,9 +217,14 @@ class DeepDaze(nn.Module):
         sizes = self.sample_sizes(lower_bound, self.upper_bound_cutout, width, self.gauss_mean)
 
         # create normalized random cutouts
-        if self.do_cutout:   
+        if self.do_cutout:
             image_pieces = [rand_cutout(out, size, center_bias=self.center_bias, center_focus=self.center_focus) for size in sizes]
-            image_pieces = [interpolate(piece, self.input_resolution) for piece in image_pieces]
+            #Implement experimental resampling.
+            for piece in image_pieces:
+                if self.experimental_resample:
+                    image_pieces = resample(piece, (self.image_width, self.image_width))
+                else:
+                    image_pieces = interpolate(piece, self.input_resolution)
         else:
             image_pieces = [interpolate(out.clone(), self.input_resolution) for _ in sizes]
 
@@ -289,6 +296,7 @@ class Imagine(nn.Module):
             hidden_size=256,
             save_gif=False,
             save_video=False,
+            experimental_resample=False
     ):
 
         super().__init__()
@@ -373,6 +381,7 @@ class Imagine(nn.Module):
                 center_focus=center_focus,
                 hidden_size=hidden_size,
                 averaging_weight=averaging_weight,
+                experimental_resample=experimental_resample
             ).to(self.device)
         self.model = model
         self.scaler = GradScaler()
