@@ -140,7 +140,7 @@ class DeepDaze(nn.Module):
             center_focus=2,
             hidden_size=256,
             averaging_weight=0.3,
-            experimental_resample=False
+            experimental_resample=None,
     ):
         super().__init__()
         # load clip
@@ -222,8 +222,8 @@ class DeepDaze(nn.Module):
             for size in sizes:
                 image_piece = rand_cutout(out, size, center_bias=self.center_bias, center_focus=self.center_focus)
                 #Implement experimental resampling.
-                if self.experimental_resample:
-                    image_piece = resample(image_piece, (224, 224), align_corners=False, mode='bilinear')
+                if self.experimental_resample not None:
+                    image_piece = resample(image_piece, (224, 224), self.experimental_resample, align_corners=False, mode='bilinear')
                 else:
                     image_piece = interpolate(image_piece, self.input_resolution)
                 image_pieces.append(image_piece)
@@ -298,7 +298,7 @@ class Imagine(nn.Module):
             hidden_size=256,
             save_gif=False,
             save_video=False,
-            experimental_resample=False
+            experimental_resample=None
     ):
 
         super().__init__()
