@@ -216,15 +216,17 @@ class DeepDaze(nn.Module):
         # sample cutout sizes between lower and upper bound
         sizes = self.sample_sizes(lower_bound, self.upper_bound_cutout, width, self.gauss_mean)
 
+        image_pieces = []
         # create normalized random cutouts
         if self.do_cutout:
-            image_pieces = [rand_cutout(out, size, center_bias=self.center_bias, center_focus=self.center_focus) for size in sizes]
-            #Implement experimental resampling.
-            for piece in image_pieces:
+            for size in sizes:
+                image_piece = rand_cutout(out, size, center_bias=self.center_bias, center_focus=self.center_focus)
+                #Implement experimental resampling.
                 if self.experimental_resample:
-                    image_pieces = resample(piece, (self.image_width, self.image_width))
+                    image_piece = resample(image_piece, (self.image_width, self.image_width), align_corners=False, mode='bilinear')
                 else:
-                    image_pieces = interpolate(piece, self.input_resolution)
+                    image_piece = interpolate(image_piece, self.input_resolution)
+                image_pieces.append(image_piece)
         else:
             image_pieces = [interpolate(out.clone(), self.input_resolution) for _ in sizes]
 

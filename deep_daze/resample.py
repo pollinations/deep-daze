@@ -51,7 +51,7 @@ to_linear_srgb = odd(_to_linear_srgb)
 to_nonlinear_srgb = odd(_to_nonlinear_srgb)
 
 
-def resample(input, size, align_corners=True, is_srgb=False):
+def resample(input, size, align_corners=True, is_srgb=False, mode='bicubic'):
     n, c, h, w = input.shape
     dh, dw = size
 
@@ -73,7 +73,7 @@ def resample(input, size, align_corners=True, is_srgb=False):
         input = F.conv2d(input, kernel_w[None, None, None, :])
 
     input = input.view([n, c, h, w])
-    input = F.interpolate(input, size, mode='bicubic', align_corners=align_corners)
+    input = F.interpolate(input, size, mode=mode, align_corners=align_corners)
 
     if is_srgb:
         input = to_nonlinear_srgb(input)
