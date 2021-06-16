@@ -234,7 +234,7 @@ class DeepDaze(nn.Module):
         image_pieces = torch.cat([self.normalize_image(piece) for piece in image_pieces])
         
         # calc image embedding
-        with autocast(enabled=True):
+        with autocast(enabled=False):
             image_embed = self.perceptor.encode_image(image_pieces)
             
         # calc loss
