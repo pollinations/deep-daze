@@ -304,7 +304,8 @@ class Imagine(nn.Module):
             hidden_size=256,
             save_gif=False,
             save_video=False,
-            experimental_resample=None
+            experimental_resample=None,
+            final_activation="identity"
     ):
 
         super().__init__()
@@ -389,7 +390,8 @@ class Imagine(nn.Module):
                 center_focus=center_focus,
                 hidden_size=hidden_size,
                 averaging_weight=averaging_weight,
-                experimental_resample=experimental_resample
+                experimental_resample=experimental_resample,
+                final_activation=final_activation
             ).to(self.device)
         self.model = model
         self.scaler = GradScaler()
