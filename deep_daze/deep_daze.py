@@ -222,7 +222,7 @@ class DeepDaze(nn.Module):
             for size in sizes:
                 image_piece = rand_cutout(out, size, center_bias=self.center_bias, center_focus=self.center_focus)
                 #Implement experimental resampling.
-                if self.experimental_resample not None:
+                if self.experimental_resample != None:
                     image_piece = resample(image_piece, (224, 224), self.experimental_resample, align_corners=False, mode='bilinear')
                 else:
                     image_piece = interpolate(image_piece, self.input_resolution)
