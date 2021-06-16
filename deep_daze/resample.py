@@ -1,4 +1,4 @@
-#Code ported over from big sleep, not mine. Credits to crowsonkb for code
+#Code ported over from others, not mine. Credits to crowsonkb and alstroemeria313 for code
 
 """Good differentiable image resampling for PyTorch."""
 
@@ -51,23 +51,29 @@ to_linear_srgb = odd(_to_linear_srgb)
 to_nonlinear_srgb = odd(_to_nonlinear_srgb)
 
 
-def resample(input, size, align_corners=True, is_srgb=False, mode='bicubic'):
+def resample(input, size, method, align_corners=True, is_srgb=False, mode='bicubic'):
+	#methods: 'bigsleep', 'vqgan'
+	assert method in ['bigsleep', 'vqgan'], "Incorrect resample method"
+
     n, c, h, w = input.shape
     dh, dw = size
+    num = 3 if method == 'bigsleep' else 2
 
     if is_srgb:
         input = to_linear_srgb(input)
 
-    input = input.view([n * c, 1, h, w])
+    viewshape = [n * c, 1, h, w] if method == 'bigsleep' else [n, c, h, w]
+
+    input = input.view(viewshape)
 
     if dh < h:
-        kernel_h = lanczos(ramp(dh / h, 3), 3).to(input.device, input.dtype)
+        kernel_h = lanczos(ramp(dh / h, num), num).to(input.device, input.dtype)
         pad_h = (kernel_h.shape[0] - 1) // 2
         input = F.pad(input, (0, 0, pad_h, pad_h), 'reflect')
         input = F.conv2d(input, kernel_h[None, None, :, None])
 
     if dw < w:
-        kernel_w = lanczos(ramp(dw / w, 3), 3).to(input.device, input.dtype)
+        kernel_w = lanczos(ramp(dw / w, num), num).to(input.device, input.dtype)
         pad_w = (kernel_w.shape[0] - 1) // 2
         input = F.pad(input, (pad_w, pad_w, 0, 0), 'reflect')
         input = F.conv2d(input, kernel_w[None, None, None, :])
