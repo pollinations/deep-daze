@@ -141,6 +141,7 @@ class DeepDaze(nn.Module):
             hidden_size=256,
             averaging_weight=0.3,
             experimental_resample=None,
+            final_activation="identity"
     ):
         super().__init__()
         # load clip
@@ -154,9 +155,13 @@ class DeepDaze(nn.Module):
         self.batch_size = batch_size
         self.total_batches = total_batches
         self.num_batches_processed = 0
+        self.final_activation = final_activation
 
         w0 = default(theta_hidden, 30.)
         w0_initial = default(theta_initial, 30.)
+
+        act_dict = {"identity": nn.Identity(), "sigmoid": nn.Sigmoid(), "relu": nn.ReLU(), "gelu": nn.GELU()}
+        assert self.final_activation in act_dict.keys(), "Invalid final activation"
 
         siren = SirenNet(
             dim_in=2,
@@ -165,7 +170,8 @@ class DeepDaze(nn.Module):
             dim_out=3,
             use_bias=True,
             w0=w0,
-            w0_initial=w0_initial
+            w0_initial=w0_initial,
+            final_activation=act_dict[self.final_activation]
         )
 
         self.model = SirenWrapper(
