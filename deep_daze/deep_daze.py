@@ -304,6 +304,7 @@ class Imagine(nn.Module):
             hidden_size=256,
             save_gif=False,
             save_video=False,
+            save_best=True,
             experimental_resample=None,
             final_activation="identity"
     ):
@@ -411,6 +412,8 @@ class Imagine(nn.Module):
         self.image = img
         self.textpath = create_text_path(self.perceptor.context_length, text=text, img=img, encoding=clip_encoding, separator=story_separator)
         self.filename = self.image_output_path()
+        self.save_best = save_best
+        self.best_loss = 0
         
         # create coding to optimize for
         self.clip_encoding = self.create_clip_encoding(text=text, img=img, encoding=clip_encoding)
@@ -534,6 +537,10 @@ class Imagine(nn.Module):
         if (iteration % self.save_every == 0) and self.save_progress:
             self.save_image(epoch, iteration, img=out)
 
+        if self.save_best and total_loss < self.best_loss:
+            self.best_loss = total_loss
+            self.save_image(epoch, iteration, img=out, best=True)
+
         return out, total_loss
     
     def get_img_sequence_number(self, epoch, iteration):
@@ -542,7 +549,7 @@ class Imagine(nn.Module):
         return sequence_number
 
     @torch.no_grad()
-    def save_image(self, epoch, iteration, img=None):
+    def save_image(self, epoch, iteration, img=None, best=False):
         sequence_number = self.get_img_sequence_number(epoch, iteration)
 
         if img is None:
@@ -552,6 +559,8 @@ class Imagine(nn.Module):
         pil_img = T.ToPILImage()(img.squeeze())
         pil_img.save(self.filename, quality=95, subsampling=0)
         pil_img.save(f"{self.textpath}.jpg", quality=95, subsampling=0)
+        if best:
+            pil_img.save(f"{self.filename}_best.jpg", quality=95, subsampling=0)
 
         tqdm.write(f'image updated at "./{str(self.filename)}"')
 
