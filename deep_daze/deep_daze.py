@@ -310,6 +310,7 @@ class Imagine(nn.Module):
             save_video=False,
             save_best=True,
             experimental_resample=None,
+            layer_activation=None,
             final_activation="identity"
     ):
 
@@ -396,6 +397,7 @@ class Imagine(nn.Module):
                 hidden_size=hidden_size,
                 averaging_weight=averaging_weight,
                 experimental_resample=experimental_resample,
+                layer_activation=layer_activation,
                 final_activation=final_activation
             ).to(self.device)
         self.model = model
