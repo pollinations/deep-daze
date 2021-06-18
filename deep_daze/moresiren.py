@@ -7,7 +7,13 @@ from torch import nn
 import torch.nn.functional as F
 from einops import rearrange
 
-from siren_pytorch import Sine, Siren, exists, cast_tuple
+from siren_pytorch import Sine, Siren
+
+def exists(val):
+    return val is not None
+
+def cast_tuple(val, repeat = 1):
+    return val if isinstance(val, tuple) else ((val,) * repeat)
 
 #Custom activation. Will it work? ¯\_(ツ)_/¯
 
