@@ -306,7 +306,8 @@ class Imagine(nn.Module):
             save_video=False,
             save_best=True,
             experimental_resample=None,
-            final_activation="identity"
+            final_activation="identity",
+            cutout_method="deepdaze"
     ):
 
         super().__init__()
@@ -535,11 +536,11 @@ class Imagine(nn.Module):
         self.optimizer.zero_grad()
 
         if (iteration % self.save_every == 0) and self.save_progress:
-            self.save_image(epoch, iteration, img=out)
-
-        if self.save_best and total_loss < self.best_loss:
-            self.best_loss = total_loss
-            self.save_image(epoch, iteration, img=out, best=True)
+            if self.save_best and total_loss < self.best_loss:
+                self.best_loss = total_loss
+                self.save_image(epoch, iteration, img=out, best=True)
+            else:
+                self.save_image(epoch, iteration, img=out)
 
         return out, total_loss
     
