@@ -174,7 +174,7 @@ class DeepDaze(nn.Module):
             use_bias=True,
             w0=w0,
             w0_initial=w0_initial,
-            layer_activation=self.layer_activation,
+            layer_activation=CustomActivation(torch_activation=layer_activation),
             final_activation=act_dict[self.final_activation]
         )
 
