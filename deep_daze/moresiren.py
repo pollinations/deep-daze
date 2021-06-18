@@ -62,6 +62,6 @@ class CustomSirenNet(nn.Module):
         return self.last_layer(x)
 
  class CustomSirenWrapper(SirenWrapper):
-    def __init__(self, net, image_width, image_height, latent_dim = None):
-        super().__init__()
-        assert isinstance(net, CustomSirenNet), 'CustomSirenWrapper must receive a custom Siren network'
+ 	def __init__(self, net, image_width, image_height, latent_dim = None):
+ 		super().__init__()
+ 		assert isinstance(net, CustomSirenNet), 'CustomSirenWrapper must receive a custom Siren network'
