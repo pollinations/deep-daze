@@ -22,6 +22,7 @@ from tqdm import trange, tqdm
 
 from .clip import load, tokenize
 from .resample import resample
+from .moresiren import CustomSirenNet, CustomActivation
 
 
 # Helpers
@@ -141,6 +142,7 @@ class DeepDaze(nn.Module):
             hidden_size=256,
             averaging_weight=0.3,
             experimental_resample=None,
+            layer_activation=None,
             final_activation="identity"
     ):
         super().__init__()
@@ -155,6 +157,7 @@ class DeepDaze(nn.Module):
         self.batch_size = batch_size
         self.total_batches = total_batches
         self.num_batches_processed = 0
+        self.layer_activation = layer_activation
         self.final_activation = final_activation
 
         w0 = default(theta_hidden, 30.)
@@ -163,7 +166,7 @@ class DeepDaze(nn.Module):
         act_dict = {"identity": nn.Identity(), "sigmoid": nn.Sigmoid(), "relu": nn.ReLU(), "gelu": nn.GELU()}
         assert self.final_activation in act_dict.keys(), "Invalid final activation"
 
-        siren = SirenNet(
+        siren = CustomSirenNet(
             dim_in=2,
             dim_hidden=hidden_size,
             num_layers=num_layers,
@@ -171,6 +174,7 @@ class DeepDaze(nn.Module):
             use_bias=True,
             w0=w0,
             w0_initial=w0_initial,
+            layer_activation=self.layer_activation,
             final_activation=act_dict[self.final_activation]
         )
 
@@ -306,8 +310,7 @@ class Imagine(nn.Module):
             save_video=False,
             save_best=True,
             experimental_resample=None,
-            final_activation="identity",
-            cutout_method="deepdaze"
+            final_activation="identity"
     ):
 
         super().__init__()
