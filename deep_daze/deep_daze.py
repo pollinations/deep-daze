@@ -178,7 +178,7 @@ class DeepDaze(nn.Module):
             final_activation=act_dict[self.final_activation]
         )
 
-        self.model = SirenWrapper(
+        self.model = CustomSirenWrapper(
             siren,
             image_width=image_width,
             image_height=image_width
