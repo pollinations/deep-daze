@@ -18,12 +18,12 @@ def cast_tuple(val, repeat = 1):
 #Custom activation. Will it work? ¯\_(ツ)_/¯
 
 class CustomActivation(nn.Module):
-	def __init__(self, torch_activation=torch.sin, w0 = 1.):
-		super().__init__()
-		self.w0 = w0
-		self.activation = torch_activation
-	def forward(self, x):
-		return self.activation(self.w0 * x)
+    def __init__(self, torch_activation=torch.sin, w0 = 1.):
+        super().__init__()
+        self.w0 = w0
+        self.activation = torch_activation
+    def forward(self, x):
+        return self.activation(self.w0 * x)
 
 #because I don't wanna do 2 repos, here's a more "open" SirenNet class, and by that I mean just changing activations on the layers themselves lol
 class CustomSirenNet(nn.Module):
@@ -61,7 +61,7 @@ class CustomSirenNet(nn.Module):
 
         return self.last_layer(x)
 
- class CustomSirenWrapper(SirenWrapper):
- 	def __init__(self, net, image_width, image_height, latent_dim = None):
- 		super().__init__()
- 		assert isinstance(net, CustomSirenNet), 'CustomSirenWrapper must receive a custom Siren network'
+class CustomSirenWrapper(SirenWrapper):
+    def __init__(self, net, image_width, image_height, latent_dim = None):
+        super().__init__()
+        assert isinstance(net, CustomSirenNet), 'CustomSirenWrapper must receive a custom Siren network'
