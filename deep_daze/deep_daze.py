@@ -22,7 +22,7 @@ from tqdm import trange, tqdm
 
 from .clip import load, tokenize
 from .resample import resample
-from .moresiren import CustomSirenNet, CustomActivation
+from .moresiren import CustomSirenNet, CustomActivation, CustomSirenWrapper
 
 
 # Helpers

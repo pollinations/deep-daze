@@ -7,7 +7,7 @@ from torch import nn
 import torch.nn.functional as F
 from einops import rearrange
 
-from siren_pytorch import Sine, Siren
+from siren_pytorch import Sine, Siren, SirenWrapper
 
 def exists(val):
     return val is not None
@@ -60,3 +60,8 @@ class CustomSirenNet(nn.Module):
                 x *= rearrange(mod, 'd -> () d')
 
         return self.last_layer(x)
+
+ class CustomSirenWrapper(SirenWrapper):
+    def __init__(self, net, image_width, image_height, latent_dim = None):
+        super().__init__()
+        assert isinstance(net, CustomSirenNet), 'CustomSirenWrapper must receive a custom Siren network'
