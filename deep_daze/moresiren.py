@@ -44,7 +44,7 @@ class CustomSirenNet(nn.Module):
                 w0 = layer_w0,
                 use_bias = use_bias,
                 is_first = is_first,
-                activation = CustomActivation(torch_activation=layer_activation)
+                activation = None if not exists(layer_activation) else CustomActivation(torch_activation=layer_activation)
             ))
 
         final_activation = nn.Identity() if not exists(final_activation) else final_activation
