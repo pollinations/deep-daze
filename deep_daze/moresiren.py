@@ -7,8 +7,7 @@ from torch import nn
 import torch.nn.functional as F
 from einops import rearrange
 
-import siren_pytorch as srn
-from siren_pytorch import Sine, Siren
+from siren_pytorch import Sine, Siren, exists, cast_tuple
 
 #Custom activation. Will it work? ¯\_(ツ)_/¯
 
@@ -42,16 +41,16 @@ class CustomSirenNet(nn.Module):
                 activation = layer_activation
             ))
 
-        final_activation = nn.Identity() if not srn.exists(final_activation) else final_activation
+        final_activation = nn.Identity() if not exists(final_activation) else final_activation
         self.last_layer = Siren(dim_in = dim_hidden, dim_out = dim_out, w0 = w0, use_bias = use_bias, activation = final_activation)
 
     def forward(self, x, mods = None):
-        mods = srn.cast_tuple(mods, self.num_layers)
+        mods = cast_tuple(mods, self.num_layers)
 
         for layer, mod in zip(self.layers, mods):
             x = layer(x)
 
-            if srn.exists(mod):
+            if exists(mod):
                 x *= rearrange(mod, 'd -> () d')
 
         return self.last_layer(x)
