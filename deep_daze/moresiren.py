@@ -74,11 +74,11 @@ class CustomSirenNet(nn.Module):
                 w0 = layer_w0,
                 use_bias = use_bias,
                 is_first = is_first,
-                activation = None if not exists(layer_activation) else CustomActivation(torch_activation=layer_activation)
+                layer_activation = None if not exists(layer_activation) else CustomActivation(torch_activation=layer_activation)
             ))
 
         final_activation = nn.Identity() if not exists(final_activation) else final_activation
-        self.last_layer = Siren(dim_in = dim_hidden, dim_out = dim_out, w0 = w0, use_bias = use_bias, activation = final_activation)
+        self.last_layer = Siren(dim_in = dim_hidden, dim_out = dim_out, w0 = w0, use_bias = use_bias, final_activation = final_activation)
 
     def forward(self, x, mods = None):
         mods = cast_tuple(mods, self.num_layers)
