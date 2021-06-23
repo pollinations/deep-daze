@@ -164,7 +164,7 @@ class DeepDaze(nn.Module):
         w0 = default(theta_hidden, 30.)
         w0_initial = default(theta_initial, 30.)
 
-        act_dict = {"identity": nn.Identity(), "sigmoid": nn.Sigmoid(), "relu": nn.ReLU(), "gelu": nn.GELU(), "selu": nn.SELU(), "elu": nn.ELU(), "leakyrelu": nn.LeakyReLU(), "tanh": nn.tanh()}
+        act_dict = {"identity": nn.Identity(), "sigmoid": nn.Sigmoid(), "relu": nn.ReLU(), "gelu": nn.GELU(), "selu": nn.SELU(), "elu": nn.ELU(), "leakyrelu": nn.LeakyReLU(), "tanh": nn.Tanh()}
         assert self.final_activation in act_dict.keys(), "Invalid final activation"
 
         siren = CustomSirenNet(
