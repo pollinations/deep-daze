@@ -143,7 +143,8 @@ class DeepDaze(nn.Module):
             averaging_weight=0.3,
             experimental_resample=None,
             layer_activation=None,
-            final_activation="identity"
+            final_activation="identity",
+            num_linears=1
     ):
         super().__init__()
         # load clip
@@ -163,7 +164,7 @@ class DeepDaze(nn.Module):
         w0 = default(theta_hidden, 30.)
         w0_initial = default(theta_initial, 30.)
 
-        act_dict = {"identity": nn.Identity(), "sigmoid": nn.Sigmoid(), "relu": nn.ReLU(), "gelu": nn.GELU()}
+        act_dict = {"identity": nn.Identity(), "sigmoid": nn.Sigmoid(), "relu": nn.ReLU(), "gelu": nn.GELU(), "selu": nn.SELU(), "elu": nn.ELU(), "leakyrelu": nn.LeakyReLU(), "tanh": nn.tanh()}
         assert self.final_activation in act_dict.keys(), "Invalid final activation"
 
         siren = CustomSirenNet(
@@ -175,7 +176,8 @@ class DeepDaze(nn.Module):
             w0=w0,
             w0_initial=w0_initial,
             layer_activation=layer_activation,
-            final_activation=act_dict[self.final_activation]
+            final_activation=act_dict[self.final_activation],
+            num_linears=num_linears
         )
 
         self.model = CustomSirenWrapper(
@@ -311,7 +313,8 @@ class Imagine(nn.Module):
             save_best=True,
             experimental_resample=None,
             layer_activation=None,
-            final_activation="identity"
+            final_activation="identity",
+            num_linears=num_linears
     ):
 
         super().__init__()
@@ -398,7 +401,8 @@ class Imagine(nn.Module):
                 averaging_weight=averaging_weight,
                 experimental_resample=experimental_resample,
                 layer_activation=layer_activation,
-                final_activation=final_activation
+                final_activation=final_activation,
+                num_linears=num_linears
             ).to(self.device)
         self.model = model
         self.scaler = GradScaler()

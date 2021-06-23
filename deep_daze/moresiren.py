@@ -28,10 +28,11 @@ class CustomActivation(nn.Module):
 #aight I guess I have to just import the whole Siren module. okay then.
 
 class CustomSiren(nn.Module):
-    def __init__(self, dim_in, dim_out, w0 = 1., c = 6., is_first = False, use_bias = True, layer_activation=torch.sin, final_activation = None):
+    def __init__(self, dim_in, dim_out, w0 = 1., c = 6., is_first = False, use_bias = True, layer_activation=torch.sin, final_activation = None, num_linears=1):
         super().__init__()
         self.dim_in = dim_in
         self.is_first = is_first
+        self.num_linears = num_linears
 
         weight = torch.zeros(dim_out, dim_in)
         bias = torch.zeros(dim_out) if use_bias else None
@@ -51,13 +52,15 @@ class CustomSiren(nn.Module):
             bias.uniform_(-w_std, w_std)
 
     def forward(self, x):
-        out =  F.linear(x, self.weight, self.bias)
-        out = self.activation(out)
+        for _ in range(self.num_linears):
+            out = F.linear(x, self.weight, self.bias)
+            out = self.activation(out)
+        
         return out
 
 #because I don't wanna do 2 repos, here's a more "open" SirenNet class, and by that I mean just changing activations on the layers themselves lol
 class CustomSirenNet(nn.Module):
-    def __init__(self, dim_in, dim_hidden, dim_out, num_layers, w0 = 1., w0_initial = 30., use_bias = True, layer_activation = None, final_activation = None):
+    def __init__(self, dim_in, dim_hidden, dim_out, num_layers, w0 = 1., w0_initial = 30., use_bias = True, layer_activation = None, final_activation = None, num_linears=1):
         super().__init__()
         self.num_layers = num_layers
         self.dim_hidden = dim_hidden
@@ -74,7 +77,8 @@ class CustomSirenNet(nn.Module):
                 w0 = layer_w0,
                 use_bias = use_bias,
                 is_first = is_first,
-                layer_activation = None if not exists(layer_activation) else CustomActivation(torch_activation=layer_activation)
+                layer_activation = None if not exists(layer_activation) else CustomActivation(torch_activation=layer_activation,
+                num_linears = num_linears)
             ))
 
         final_activation = nn.Identity() if not exists(final_activation) else final_activation
