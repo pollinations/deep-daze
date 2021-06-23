@@ -314,7 +314,7 @@ class Imagine(nn.Module):
             experimental_resample=None,
             layer_activation=None,
             final_activation="identity",
-            num_linears=num_linears
+            num_linears=1
     ):
 
         super().__init__()
