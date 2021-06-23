@@ -158,8 +158,10 @@ class DeepDaze(nn.Module):
         self.batch_size = batch_size
         self.total_batches = total_batches
         self.num_batches_processed = 0
+
         self.layer_activation = layer_activation
         self.final_activation = final_activation
+        self.num_linears = num_linears
 
         w0 = default(theta_hidden, 30.)
         w0_initial = default(theta_initial, 30.)
@@ -177,7 +179,7 @@ class DeepDaze(nn.Module):
             w0_initial=w0_initial,
             layer_activation=layer_activation,
             final_activation=act_dict[self.final_activation],
-            num_linears=num_linears
+            num_linears=self.num_linears
         )
 
         self.model = CustomSirenWrapper(

@@ -55,7 +55,7 @@ class CustomSiren(nn.Module):
         for _ in range(self.num_linears):
             out = F.linear(x, self.weight, self.bias)
             out = self.activation(out)
-        
+
         return out
 
 #because I don't wanna do 2 repos, here's a more "open" SirenNet class, and by that I mean just changing activations on the layers themselves lol
@@ -77,8 +77,8 @@ class CustomSirenNet(nn.Module):
                 w0 = layer_w0,
                 use_bias = use_bias,
                 is_first = is_first,
-                layer_activation = None if not exists(layer_activation) else CustomActivation(torch_activation=layer_activation,
-                num_linears = num_linears)
+                layer_activation = None if not exists(layer_activation) else CustomActivation(torch_activation=layer_activation),
+                num_linears=num_linears
             ))
 
         final_activation = nn.Identity() if not exists(final_activation) else final_activation
