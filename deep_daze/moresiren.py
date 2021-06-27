@@ -7,8 +7,6 @@ from torch import nn
 import torch.nn.functional as F
 from einops import rearrange
 
-from .utils import torch_pi
-
 def exists(val):
     return val is not None
 
@@ -28,12 +26,12 @@ class CustomActivation(nn.Module):
 #aight I guess I have to just import the whole Siren module. okay then.
 
 class CustomSiren(nn.Module):
-    def __init__(self, dim_in, dim_out, w0 = 1., c = 6., is_first = False, use_bias = True, layer_activation=torch.sin, final_activation = None, num_linears=1, multiply_two=False):
+    def __init__(self, dim_in, dim_out, w0 = 1., c = 6., is_first = False, use_bias = True, layer_activation=torch.sin, final_activation = None, num_linears=1, multiply=None):
         super().__init__()
         self.dim_in = dim_in
         self.is_first = is_first
         self.num_linears = num_linears
-        self.multiply_two = multiply_two
+        self.multiply = multiply
 
         weight = torch.zeros(dim_out, dim_in)
         bias = torch.zeros(dim_out) if use_bias else None
@@ -55,15 +53,15 @@ class CustomSiren(nn.Module):
     def forward(self, x):
         for _ in range(self.num_linears):
             out = F.linear(x, self.weight, self.bias)
-            if self.multiply_two:
-                out *= 2
+            if exists(self.multiply):
+                out *= self.multiply
             out = self.activation(out)
 
         return out
 
 #because I don't wanna do 2 repos, here's a more "open" SirenNet class, and by that I mean just changing activations on the layers themselves lol
 class CustomSirenNet(nn.Module):
-    def __init__(self, dim_in, dim_hidden, dim_out, num_layers, w0 = 1., w0_initial = 30., use_bias = True, layer_activation = None, final_activation = None, num_linears = 1, multiply_two = False):
+    def __init__(self, dim_in, dim_hidden, dim_out, num_layers, w0 = 1., w0_initial = 30., use_bias = True, layer_activation = None, final_activation = None, num_linears = 1, multiply=None):
         super().__init__()
         self.num_layers = num_layers
         self.dim_hidden = dim_hidden
@@ -85,7 +83,7 @@ class CustomSirenNet(nn.Module):
             ))
 
         final_activation = nn.Identity() if not exists(final_activation) else final_activation
-        self.last_layer = CustomSiren(dim_in = dim_hidden, dim_out = dim_out, w0 = w0, use_bias = use_bias, final_activation = final_activation, multiply_two = multiply_two)
+        self.last_layer = CustomSiren(dim_in = dim_hidden, dim_out = dim_out, w0 = w0, use_bias = use_bias, final_activation = final_activation, multiply=multiply)
 
     def forward(self, x, mods = None):
         mods = cast_tuple(mods, self.num_layers)

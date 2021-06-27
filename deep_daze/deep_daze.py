@@ -108,10 +108,10 @@ def open_folder(path):
 
 
 def norm_siren_output(img, activation):
-    if activation in neg_one_to_one:
-        return ((img + 1) * 0.5).clamp(0.0, 1.0)
-    else:
-        return unmap_pixels(img)
+  if activation in neg_one_to_one:
+    return clamp_with_grad((img + 1) * 0.5, 0., 1.)
+  else:
+    return unmap_pixels(img)
 
 
 def create_text_path(context_length, text=None, img=None, encoding=None, separator=None):
@@ -158,7 +158,7 @@ class DeepDaze(nn.Module):
             layer_activation=None,
             final_activation=nn.Identity(),
             num_linears=1,
-            multiply_two=False
+            multiply=None
     ):
         super().__init__()
         # load clip
@@ -191,7 +191,7 @@ class DeepDaze(nn.Module):
             layer_activation=layer_activation,
             final_activation=final_activation,
             num_linears=num_linears,
-            multiply_two=multiply_two
+            multiply=multiply
         )
 
         self.model = CustomSirenWrapper(
@@ -332,7 +332,7 @@ class Imagine(nn.Module):
             layer_activation=None,
             final_activation="identity",
             num_linears=1,
-            multiply_two=False
+            multiply=None
     ):
 
         super().__init__()
@@ -421,7 +421,7 @@ class Imagine(nn.Module):
                 layer_activation=layer_activation,
                 final_activation=final_activation,
                 num_linears=num_linears,
-                multiply_two=multiply_two
+                multiply=multiply
             ).to(self.device)
         self.model = model
         self.scaler = GradScaler()
