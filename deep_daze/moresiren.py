@@ -7,7 +7,7 @@ from torch import nn
 import torch.nn.functional as F
 from einops import rearrange
 
-from .utils import exists
+from .utils import exists, enable
 
 def cast_tuple(val, repeat = 1):
     return val if isinstance(val, tuple) else ((val,) * repeat)
@@ -33,11 +33,11 @@ class CustomSiren(nn.Module):
         self.multiply = multiply
 
         weight = torch.zeros(dim_out, dim_in)
-        bias = torch.zeros(dim_out) if use_bias else None
+        bias = enable(use_bias, torch.zeros(dim_out))
         self.init_(weight, bias, c = c, w0 = w0)
 
         self.weight = nn.Parameter(weight)
-        self.bias = nn.Parameter(bias) if use_bias else None
+        self.bias = enable(use_bias, nn.Parameter(bias))
         self.activation = CustomActivation(torch_activation=layer_activation, w0=w0) if final_activation is None else final_activation
 
     def init_(self, weight, bias, c, w0):
@@ -123,7 +123,7 @@ class CustomSirenWrapper(nn.Module):
         modulate = exists(self.modulator)
         assert not (modulate ^ exists(latent)), 'latent vector must be only supplied if `latent_dim` was passed in on instantiation'
 
-        mods = self.modulator(latent) if modulate else None
+        mods = enable(modulate, self.modulator(latent))
 
         coords = self.grid.clone().detach().requires_grad_()
         out = self.net(coords, mods)

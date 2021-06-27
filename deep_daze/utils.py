@@ -8,6 +8,10 @@ from torch.nn import functional as F
 def exists(val):
     return val is not None
 
+#Clean up code.
+def enable(condition, value):
+    return value if condition else None
+
 def sinc(x):
     return torch.where(x != 0,  torch.sin(math.pi * x) / (math.pi * x), x.new_ones([]))
 

@@ -23,7 +23,7 @@ from tqdm import trange, tqdm
 from .clip import load, tokenize
 from .resample import resample
 from .moresiren import CustomSirenNet, CustomActivation, CustomSirenWrapper
-from .utils import clamp_with_grad, unmap_pixels
+from .utils import clamp_with_grad, unmap_pixels, exists, enable
 
 #functions lists.
 #Some final activation functions have outputs from range [-1, 1] and others have from range [0, 1].
@@ -38,10 +38,6 @@ clip_std = [0.26862954, 0.26130258, 0.27577711]
 
 
 # Helpers
-
-def exists(val):
-    return val is not None
-
 
 def default(val, d):
     return val if exists(val) else d
@@ -115,12 +111,12 @@ def norm_siren_output(img, activation):
 
 
 def create_text_path(context_length, text=None, img=None, encoding=None, separator=None):
-    if text is not None:
-        if separator is not None and separator in text:
+    if exists(text):
+        if exists(separator) and separator in text:
             #Reduces filename to first epoch text
             text = text[:text.index(separator, )]
         input_name = text.replace(" ", "_")[:context_length]
-    elif img is not None:
+    elif exists(img):
         if isinstance(img, str):
             input_name = "".join(img.replace(" ", "_").split(".")[:-1])
         else:
@@ -348,25 +344,26 @@ class Imagine(nn.Module):
         # fields for story creation:
         self.create_story = create_story
         self.words = None
-        self.separator = str(story_separator) if story_separator is not None else None
-        if self.separator is not None and text is not None:
+
+        self.separator = enable(exists(story_separator), str(story_separator))
+        if exists(self.separator) and exists(text):
             #exit if text is just the separator
             if str(text).replace(' ','').replace(self.separator,'') == '':
                 print('Exiting because the text only consists of the separator! Needs words or phrases that are separated by the separator.')
                 exit()
             #adds a space to each separator and removes double spaces that might be generated
             text = text.replace(self.separator,self.separator+' ').replace('  ',' ').strip()
-        self.all_words = text.split(" ") if text is not None else None
+        self.all_words = enable(exists(text), text.split(" "))
         self.num_start_words = story_start_words
         self.words_per_epoch = story_words_per_epoch
         if create_story:
-            assert text is not None,  "We need text input to create a story..."
+            assert exists(text),  "We need text input to create a story..."
             # overwrite epochs to match story length
             num_words = len(self.all_words)
             self.epochs = 1 + (num_words - self.num_start_words) / self.words_per_epoch
             # add one epoch if not divisible
             self.epochs = int(self.epochs) if int(self.epochs) == self.epochs else int(self.epochs) + 1
-            if self.separator is not None:
+            if exists(self.separator):
                 if self.separator not in text:
                     print("Separator '"+self.separator+"' will be ignored since not in text!")
                     self.separator = None
@@ -469,15 +466,15 @@ class Imagine(nn.Module):
     def create_clip_encoding(self, text=None, img=None, encoding=None):
         self.text = text
         self.img = img
-        if encoding is not None:
+        if exists(encoding):
             encoding = encoding.to(self.device)
         elif self.create_story:
             encoding = self.update_story_encoding(epoch=0, iteration=1)
-        elif text is not None and img is not None:
+        elif exists(text) and exists(img):
             encoding = (self.create_text_encoding(text) + self.create_img_encoding(img)) / 2
-        elif text is not None:
+        elif exists(text):
             encoding = self.create_text_encoding(text)
-        elif img is not None:
+        elif exists(img):
             encoding = self.create_img_encoding(img)
         return encoding
 
@@ -505,13 +502,13 @@ class Imagine(nn.Module):
                 return c +1
 
     def update_story_encoding(self, epoch, iteration):
-        if self.separator is not None:
+        if exists(self.separator):
             self.words = " ".join(self.all_words[:self.index_of_first_separator()])
             #removes separator from epoch-text
             self.words = self.words.replace(self.separator,'')
             self.all_words = self.all_words[self.index_of_first_separator():]
         else:
-            if self.words is None:
+            if not exists(self.words):
                 self.words = " ".join(self.all_words[:self.num_start_words])
                 self.all_words = self.all_words[self.num_start_words:]
             else:
@@ -581,7 +578,7 @@ class Imagine(nn.Module):
 
     @torch.no_grad()
     def save_image(self, epoch, iteration, img=None, progress=False, best=False):
-        sequence_number = self.get_img_sequence_number(epoch, iteration) if progress else None
+        sequence_number = enable(progress, self.get_img_sequence_number(epoch, iteration))
 
         if img is None:
             img = self.model(self.clip_encoding, return_loss=False).cpu().float().clamp(0., 1.)
