@@ -271,7 +271,7 @@ class DeepDaze(nn.Module):
 
         if self.augment:
             #Implement augmentation.
-            batch = self.augs(torch.cat(image_pieces, dim=0))
+            batch = self.augs(torch.cat(image_pieces, dim=0).float())
 
             if self.noise_fac:
                 facs = batch.new_empty([sizes, 1, 1, 1]).uniform_(0, self.noise_fac)
@@ -285,8 +285,8 @@ class DeepDaze(nn.Module):
             batch = torch.cat([self.normalize_image(piece) for piece in image_pieces])
         
         # calc image embedding
-        with autocast(enabled=False):
-            image_embed = self.perceptor.encode_image(batch).float()
+        with autocast(enabled=True):
+            image_embed = self.perceptor.encode_image(batch)
             
         # calc loss
         # loss over averaged features of cutouts
@@ -508,7 +508,7 @@ class Imagine(nn.Module):
     def create_text_encoding(self, text):
         tokenized_text = tokenize(text).to(self.device)
         with torch.no_grad():
-            text_encoding = self.perceptor.encode_text(tokenized_text).float().detach()
+            text_encoding = self.perceptor.encode_text(tokenized_text).detach()
         return text_encoding
     
     def create_img_encoding(self, img):
