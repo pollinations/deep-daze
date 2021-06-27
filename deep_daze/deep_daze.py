@@ -175,7 +175,7 @@ class DeepDaze(nn.Module):
             w0=w0,
             w0_initial=w0_initial,
             layer_activation=layer_activation,
-            final_activation=act_dict[self.final_activation],
+            final_activation=final_activation,
             num_linears=self.num_linears
         )
 
