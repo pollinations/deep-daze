@@ -265,7 +265,7 @@ class DeepDaze(nn.Module):
         
         # calc image embedding
         with autocast(enabled=False):
-            image_embed = self.perceptor.encode_image(batch)
+            image_embed = self.perceptor.encode_image(image_pieces)
             
         # calc loss
         # loss over averaged features of cutouts
