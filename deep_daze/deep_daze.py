@@ -508,7 +508,7 @@ class Imagine(nn.Module):
     def create_text_encoding(self, text):
         tokenized_text = tokenize(text).to(self.device)
         with torch.no_grad():
-            text_encoding = self.perceptor.encode_text(tokenized_text).detach()
+            text_encoding = self.perceptor.encode_text(tokenized_text).float().detach()
         return text_encoding
     
     def create_img_encoding(self, img):
