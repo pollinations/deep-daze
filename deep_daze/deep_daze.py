@@ -98,11 +98,8 @@ def open_folder(path):
         pass
 
 
-def norm_siren_output(img, unmap=False):
-    if unmap:
-        return unmap_pixels((img + 1) * 0.5)
-    else:
-        return ((img + 1) * 0.5).clamp(0.0, 1.0)
+def norm_siren_output(img):
+    return unmap_pixels(img)
 
 
 def create_text_path(context_length, text=None, img=None, encoding=None, separator=None):
@@ -201,7 +198,6 @@ class DeepDaze(nn.Module):
         self.center_focus = center_focus
         self.averaging_weight = averaging_weight
         self.experimental_resample = experimental_resample
-        self.unmap = True if final_activation == nn.Sigmoid() else False
         
     def sample_sizes(self, lower, upper, width, gauss_mean):
         if self.gauss_sampling:
@@ -217,7 +213,7 @@ class DeepDaze(nn.Module):
 
     def forward(self, text_embed, return_loss=True, dry_run=False):
         out = self.model()
-        out = norm_siren_output(out, unmap=self.unmap)
+        out = norm_siren_output(out)
 
         if not return_loss:
             return out
@@ -315,10 +311,12 @@ class Imagine(nn.Module):
             save_gif=False,
             save_video=False,
             save_best=True,
+
             experimental_resample=None,
             layer_activation=None,
             final_activation="identity",
-            num_linears=1
+            num_linears=1,
+            clip_activation=nn.ReLU(inplace=True)
     ):
 
         super().__init__()
@@ -369,7 +367,7 @@ class Imagine(nn.Module):
 
         # Load CLIP
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        clip_perceptor, norm = load(model_name, jit=jit, device=self.device)
+        clip_perceptor, norm = load(model_name, jit=jit, device=self.device, clip_activation=clip_activation)
         self.perceptor = clip_perceptor.eval()
         for param in self.perceptor.parameters():
             param.requires_grad = False
