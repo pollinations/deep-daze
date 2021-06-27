@@ -32,13 +32,11 @@ to_linear_srgb = odd(_to_linear_srgb)
 to_nonlinear_srgb = odd(_to_nonlinear_srgb)
 
 
-def resample(input, size, method, align_corners=True, is_srgb=False, mode='bicubic'):
-    #methods: 'bigsleep', 'vqgan'
-    assert method in [None, 'bigsleep', 'vqgan'], "Incorrect resample method"
+def resample(input, size, num, align_corners=True, is_srgb=False, mode='bicubic'):
+    #bigsleep uses a num of 3, vqgan uses a num of 2
 
     n, c, h, w = input.shape
     dh, dw = size
-    num = 3 if method == 'bigsleep' else 2
 
     if is_srgb:
         input = to_linear_srgb(input)

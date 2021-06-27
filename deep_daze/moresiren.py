@@ -7,8 +7,6 @@ from torch import nn
 import torch.nn.functional as F
 from einops import rearrange
 
-from siren_pytorch import Sine, Siren, SirenWrapper
-
 def exists(val):
     return val is not None
 
