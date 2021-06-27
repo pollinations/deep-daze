@@ -46,4 +46,5 @@ clamp_with_grad = ClampWithGrad.apply
 def unmap_pixels(x, logit_laplace_eps=0.15):
     return clamp_with_grad((x - logit_laplace_eps) / (1 - 2 * logit_laplace_eps), 0, 1)
 
-##Lists of functions
+#https://discuss.pytorch.org/t/np-pi-equivalent-in-pytorch/67157
+torch_pi = torch.acos(torch.zeros(1)).item() * 2

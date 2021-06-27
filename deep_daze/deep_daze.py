@@ -7,7 +7,6 @@ from pathlib import Path
 
 import torch
 import torch.nn.functional as F
-import kornia.augmentation as K
 from siren_pytorch import SirenNet, SirenWrapper
 from torch import nn
 from torch.cuda.amp import GradScaler, autocast
@@ -160,7 +159,7 @@ class DeepDaze(nn.Module):
             final_activation=nn.Identity(),
             num_linears=1,
             multiply_two=False,
-            augment=False
+            fourier=False
     ):
         super().__init__()
         # load clip
@@ -178,7 +177,6 @@ class DeepDaze(nn.Module):
         self.layer_activation = layer_activation
         self.final_activation = final_activation
         self.num_linears = num_linears
-        self.augment = augment
 
         w0 = default(theta_hidden, 30.)
         w0_initial = default(theta_initial, 30.)
@@ -200,7 +198,8 @@ class DeepDaze(nn.Module):
         self.model = CustomSirenWrapper(
             siren,
             image_width=image_width,
-            image_height=image_width
+            image_height=image_width,
+            fourier=fourier
         )
 
         self.saturate_bound = saturate_bound
@@ -215,14 +214,6 @@ class DeepDaze(nn.Module):
         self.center_focus = center_focus
         self.averaging_weight = averaging_weight
         self.experimental_resample = experimental_resample
-        self.augs = nn.Sequential(
-            K.RandomHorizontalFlip(p=0.5),
-            # K.RandomSolarize(0.01, 0.01, p=0.7),
-            K.RandomSharpness(0.3,p=0.4),
-            K.RandomAffine(degrees=30, translate=0.1, p=0.8, padding_mode='border'),
-            K.RandomPerspective(0.7,p=0.7),
-            K.ColorJitter(hue=0.01, saturation=0.01, p=0.7))
-        self.noise_fac = False
         
     def sample_sizes(self, lower, upper, width, gauss_mean):
         if self.gauss_sampling:
@@ -269,23 +260,11 @@ class DeepDaze(nn.Module):
         else:
             image_pieces = [interpolate(out.clone(), self.input_resolution) for _ in sizes]
 
-        if self.augment:
-            #Implement augmentation.
-            batch = self.augs(torch.cat(image_pieces, dim=0))
-
-            if self.noise_fac:
-                facs = batch.new_empty([sizes, 1, 1, 1]).uniform_(0, self.noise_fac)
-                batch = batch + facs * torch.randn_like(batch)
-
-            # normalize
-            batch = T.Normalize(mean=clip_mean, std=clip_std)
-
-        else:
-            # normalize
-            batch = torch.cat([self.normalize_image(piece) for piece in image_pieces])
+        # normalize
+        image_pieces = torch.cat([self.normalize_image(piece) for piece in image_pieces])
         
         # calc image embedding
-        with autocast(enabled=True):
+        with autocast(enabled=False):
             image_embed = self.perceptor.encode_image(batch)
             
         # calc loss
@@ -356,7 +335,7 @@ class Imagine(nn.Module):
             final_activation="identity",
             num_linears=1,
             multiply_two=False,
-            augment=False
+            fourier=False
     ):
 
         super().__init__()
@@ -446,7 +425,7 @@ class Imagine(nn.Module):
                 final_activation=final_activation,
                 num_linears=num_linears,
                 multiply_two=multiply_two,
-                augment=augment
+                fourier=fourier
             ).to(self.device)
         self.model = model
         self.scaler = GradScaler()

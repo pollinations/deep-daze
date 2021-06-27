@@ -7,6 +7,8 @@ from torch import nn
 import torch.nn.functional as F
 from einops import rearrange
 
+from .utils import torch_pi
+
 def exists(val):
     return val is not None
 
@@ -98,7 +100,7 @@ class CustomSirenNet(nn.Module):
 
 
 class CustomSirenWrapper(nn.Module):
-    def __init__(self, net, image_width, image_height, latent_dim = None):
+    def __init__(self, net, image_width, image_height, latent_dim = None, fourier = False):
         super().__init__()
         assert isinstance(net, CustomSirenNet), 'CustomSirenWrapper must receive a custom Siren network'
 
@@ -117,7 +119,28 @@ class CustomSirenWrapper(nn.Module):
         tensors = [torch.linspace(-1, 1, steps = image_width), torch.linspace(-1, 1, steps = image_height)]
         mgrid = torch.stack(torch.meshgrid(*tensors), dim=-1)
         mgrid = rearrange(mgrid, 'h w c -> (h w) c')
+
+        #From Vadim Epstein's SIREN notebook (modified)
+        if fourier:
+            mgrid = fourier_feature_map(mgrid, fourier_maps, fourier_scale)
+
         self.register_buffer('grid', mgrid)
+
+    def fourier_feature_map(self, xy, map = 256, fourier_scale = 4, mapping_type = 'gauss'):
+        def input_mapping(x, B): # feature mappings
+            x_proj = (2.*torch_pi*x) @ B
+            y = torch.cat([torch.sin(x_proj), torch.cos(x_proj)], dim=-1)
+            print(' mapping input:', x.shape, 'output', y.shape)
+            return y
+
+        if mapping_type == 'gauss':
+            B = torch.randn(2, map)
+            B *= fourier_scale
+        else:
+            torch.eye(2).T
+
+        xy = input_mapping(xy, B)
+        return xy
 
     def forward(self, img = None, *, latent = None):
         modulate = exists(self.modulator)
