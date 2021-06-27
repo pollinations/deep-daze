@@ -282,8 +282,7 @@ class DeepDaze(nn.Module):
 
         else:
             # normalize
-            image_pieces = torch.cat([self.normalize_image(piece) for piece in image_pieces]) +
-            batch = image_pieces
+            batch = torch.cat([self.normalize_image(piece) for piece in image_pieces])
         
         # calc image embedding
         with autocast(enabled=False):
