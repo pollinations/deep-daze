@@ -25,6 +25,14 @@ from .resample import resample
 from .moresiren import CustomSirenNet, CustomActivation, CustomSirenWrapper
 from .utils import clamp_with_grad, unmap_pixels
 
+#functions lists.
+#Some final activation functions have outputs from range [-1, 1] and others have from range [0, 1].
+#If we want program to be able to work with either range without excess white or black in images,
+#then we need some way to let Deep Daze know to convert the outputs or not before clamping.
+#these lists'll do it. there might be an easier way but i don't know it so lol
+neg_one_to_one = [nn.Identity(), nn.Tanh(), nn.ELU(), nn.Hardtanh(), nn.LogSigmoid(), nn.RReLU(), nn.SELU(), nn.CELU(), nn.GELU(), nn.SiLU(), nn.Mish(), nn.Softsign(), nn.Tanhshrink()]
+zero_to_one = [nn.Hardsigmoid(), nn.LeakyReLU(), nn.ReLU(), nn.ReLU6(), nn.Sigmoid(), nn.Softplus()]
+
 
 # Helpers
 
@@ -98,7 +106,9 @@ def open_folder(path):
         pass
 
 
-def norm_siren_output(img):
+def norm_siren_output(img, activation):
+    if activation in neg_one_to_one:
+        img = (img + 1) * 0.5
     return unmap_pixels(img)
 
 
@@ -145,7 +155,8 @@ class DeepDaze(nn.Module):
             experimental_resample=None,
             layer_activation=None,
             final_activation=nn.Identity(),
-            num_linears=1
+            num_linears=1,
+            multiply_two=False
     ):
         super().__init__()
         # load clip
@@ -177,7 +188,8 @@ class DeepDaze(nn.Module):
             w0_initial=w0_initial,
             layer_activation=layer_activation,
             final_activation=final_activation,
-            num_linears=self.num_linears
+            num_linears=num_linears,
+            multiply_two=multiply_two
         )
 
         self.model = CustomSirenWrapper(
@@ -316,7 +328,7 @@ class Imagine(nn.Module):
             layer_activation=None,
             final_activation="identity",
             num_linears=1,
-            clip_activation=nn.ReLU(inplace=True)
+            multiply_two=False
     ):
 
         super().__init__()
@@ -404,17 +416,20 @@ class Imagine(nn.Module):
                 experimental_resample=experimental_resample,
                 layer_activation=layer_activation,
                 final_activation=final_activation,
-                num_linears=num_linears
+                num_linears=num_linears,
+                multiply_two=multiply_two
             ).to(self.device)
         self.model = model
         self.scaler = GradScaler()
         siren_params = model.model.parameters()
+
         if optimizer == "AdamP":
             self.optimizer = AdamP(siren_params, lr)
         elif optimizer == "Adam":
             self.optimizer = torch.optim.Adam(siren_params, lr)
         elif optimizer == "DiffGrad":
             self.optimizer = DiffGrad(siren_params, lr)
+        
         self.gradient_accumulate_every = gradient_accumulate_every
         self.save_every = save_every
         self.save_date_time = save_date_time

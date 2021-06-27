@@ -43,5 +43,7 @@ class ClampWithGrad(torch.autograd.Function):
 
 clamp_with_grad = ClampWithGrad.apply
 
-def unmap_pixels(x, logit_laplace_eps=0.1):
+def unmap_pixels(x, logit_laplace_eps=0.15):
     return clamp_with_grad((x - logit_laplace_eps) / (1 - 2 * logit_laplace_eps), 0, 1)
+
+##Lists of functions
