@@ -158,8 +158,7 @@ class DeepDaze(nn.Module):
             layer_activation=None,
             final_activation=nn.Identity(),
             num_linears=1,
-            multiply_two=False,
-            fourier=False
+            multiply_two=False
     ):
         super().__init__()
         # load clip
@@ -198,8 +197,7 @@ class DeepDaze(nn.Module):
         self.model = CustomSirenWrapper(
             siren,
             image_width=image_width,
-            image_height=image_width,
-            fourier=fourier
+            image_height=image_width
         )
 
         self.saturate_bound = saturate_bound
@@ -334,8 +332,7 @@ class Imagine(nn.Module):
             layer_activation=None,
             final_activation="identity",
             num_linears=1,
-            multiply_two=False,
-            fourier=False
+            multiply_two=False
     ):
 
         super().__init__()
@@ -424,8 +421,7 @@ class Imagine(nn.Module):
                 layer_activation=layer_activation,
                 final_activation=final_activation,
                 num_linears=num_linears,
-                multiply_two=multiply_two,
-                fourier=fourier
+                multiply_two=multiply_two
             ).to(self.device)
         self.model = model
         self.scaler = GradScaler()
