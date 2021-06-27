@@ -70,7 +70,7 @@ def available_models() -> List[str]:
     return list(_MODELS.keys())
 
 
-def load(name: str, device: Union[str, torch.device] = "cuda" if torch.cuda.is_available() else "cpu", jit=True):
+def load(name: str, device: Union[str, torch.device] = "cuda" if torch.cuda.is_available() else "cpu", jit=True, clip_activation=nn.ReLU(inplace=True)):
     """Load a CLIP model
 
     Parameters
@@ -111,7 +111,7 @@ def load(name: str, device: Union[str, torch.device] = "cuda" if torch.cuda.is_a
         state_dict = torch.load(model_path, map_location="cpu")
 
     if not jit:
-        model = build_model(state_dict or model.state_dict()).to(device)
+        model = build_model(state_dict or model.state_dict(), clip_activation=clip_activation).to(device)
         if str(device) == "cpu":
             model.float()
         return model, _transform()
@@ -195,7 +195,7 @@ def tokenize(texts: Union[str, List[str]], context_length: int = 77) -> torch.Lo
 class Bottleneck(nn.Module):
     expansion = 4
 
-    def __init__(self, inplanes, planes, stride=1):
+    def __init__(self, inplanes, planes, stride=1, activation=nn.ReLU(inplace=True)):
         super().__init__()
 
         # all conv layers have stride 1. an avgpool is performed after the second convolution when stride > 1
@@ -210,7 +210,7 @@ class Bottleneck(nn.Module):
         self.conv3 = nn.Conv2d(planes, planes * self.expansion, 1, bias=False)
         self.bn3 = nn.BatchNorm2d(planes * self.expansion)
 
-        self.relu = nn.GELU()
+        self.relu = activation
         self.downsample = None
         self.stride = stride
 
@@ -283,7 +283,7 @@ class ModifiedResNet(nn.Module):
     - The final pooling layer is a QKV attention instead of an average pool
     """
 
-    def __init__(self, layers, output_dim, heads, input_resolution=224, width=64):
+    def __init__(self, layers, output_dim, heads, input_resolution=224, width=64, activation=nn.ReLU(inplace=True)):
         super().__init__()
         self.output_dim = output_dim
         self.input_resolution = input_resolution
@@ -296,7 +296,7 @@ class ModifiedResNet(nn.Module):
         self.conv3 = nn.Conv2d(width // 2, width, kernel_size=3, padding=1, bias=False)
         self.bn3 = nn.BatchNorm2d(width)
         self.avgpool = nn.AvgPool2d(2)
-        self.relu = nn.GELU()
+        self.relu = activation
 
         # residual layers
         self._inplanes = width  # this is a *mutable* variable used during construction
@@ -309,11 +309,11 @@ class ModifiedResNet(nn.Module):
         self.attnpool = AttentionPool2d(input_resolution // 32, embed_dim, heads, output_dim)
 
     def _make_layer(self, planes, blocks, stride=1):
-        layers = [Bottleneck(self._inplanes, planes, stride)]
+        layers = [Bottleneck(self._inplanes, planes, stride, activation=self.relu)]
 
         self._inplanes = planes * Bottleneck.expansion
         for _ in range(1, blocks):
-            layers.append(Bottleneck(self._inplanes, planes))
+            layers.append(Bottleneck(self._inplanes, planes, activation=self.relu))
 
         return nn.Sequential(*layers)
 
@@ -438,7 +438,8 @@ class CLIP(nn.Module):
                  vocab_size: int,
                  transformer_width: int,
                  transformer_heads: int,
-                 transformer_layers: int
+                 transformer_layers: int,
+                 clip_activation=nn.ReLU(inplace=True)
                  ):
         super().__init__()
 
@@ -581,7 +582,7 @@ def convert_weights(model: nn.Module):
     model.apply(_convert_weights_to_fp16)
 
 
-def build_model(state_dict: dict):
+def build_model(state_dict: dict, clip_activation=nn.ReLU(inplace=True)):
     vit = "visual.proj" in state_dict
 
     if vit:
@@ -609,7 +610,7 @@ def build_model(state_dict: dict):
     model = CLIP(
         embed_dim,
         image_resolution, vision_layers, vision_width, vision_patch_size,
-        context_length, vocab_size, transformer_width, transformer_heads, transformer_layers
+        context_length, vocab_size, transformer_width, transformer_heads, transformer_layers, clip_activation
     )
 
     for key in ["input_resolution", "context_length", "vocab_size"]:

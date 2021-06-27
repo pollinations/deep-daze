@@ -332,7 +332,8 @@ class Imagine(nn.Module):
             layer_activation=None,
             final_activation="identity",
             num_linears=1,
-            multiply=None
+            multiply=None,
+            clip_activation=nn.ReLU(inplace=True)
     ):
 
         super().__init__()
@@ -383,7 +384,7 @@ class Imagine(nn.Module):
 
         # Load CLIP
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        clip_perceptor, norm = load(model_name, jit=jit, device=self.device)
+        clip_perceptor, norm = load(model_name, jit=jit, device=self.device, clip_activation=clip_activation)
         self.perceptor = clip_perceptor.eval()
         for param in self.perceptor.parameters():
             param.requires_grad = False

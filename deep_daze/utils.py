@@ -5,6 +5,8 @@ import math
 import torch
 from torch.nn import functional as F
 
+def exists(val):
+    return val is not None
 
 def sinc(x):
     return torch.where(x != 0,  torch.sin(math.pi * x) / (math.pi * x), x.new_ones([]))

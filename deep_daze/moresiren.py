@@ -7,8 +7,7 @@ from torch import nn
 import torch.nn.functional as F
 from einops import rearrange
 
-def exists(val):
-    return val is not None
+from .utils import exists
 
 def cast_tuple(val, repeat = 1):
     return val if isinstance(val, tuple) else ((val,) * repeat)
