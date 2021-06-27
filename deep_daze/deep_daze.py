@@ -108,8 +108,7 @@ def open_folder(path):
 
 def norm_siren_output(img, activation):
     if activation in neg_one_to_one:
-        img = (img + 1) * 0.5
-        return clamp_with_grad(img, 0., 1.)
+        return ((img + 1) * 0.5).clamp(0.0, 1.0)
     else:
         return unmap_pixels(img)
 
