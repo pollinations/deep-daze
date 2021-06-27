@@ -565,12 +565,11 @@ class Imagine(nn.Module):
         self.scaler.update()
         self.optimizer.zero_grad()
 
-        if (iteration % self.save_every == 0) and self.save_progress:
-            if self.save_best and total_loss < self.best_loss:
-                self.best_loss = total_loss
-                self.save_image(epoch, iteration, img=out, best=True)
-            else:
-                self.save_image(epoch, iteration, img=out)
+        if iteration % self.save_every == 0:
+          self.save_image(epoch, iteration, img=out, progress=self.save_progress)
+          if self.save_best and total_loss < self.best_loss:
+            self.best_loss = total_loss
+            self.save_image(epoch, iteration, img=out, best=True)
 
         return out, total_loss
     
@@ -580,8 +579,8 @@ class Imagine(nn.Module):
         return sequence_number
 
     @torch.no_grad()
-    def save_image(self, epoch, iteration, img=None, best=False):
-        sequence_number = self.get_img_sequence_number(epoch, iteration)
+    def save_image(self, epoch, iteration, img=None, progress=False, best=False):
+        sequence_number = self.get_img_sequence_number(epoch, iteration) if progress else None
 
         if img is None:
             img = self.model(self.clip_encoding, return_loss=False).cpu().float().clamp(0., 1.)
