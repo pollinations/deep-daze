@@ -105,7 +105,7 @@ def open_folder(path):
 
 def norm_siren_output(img, activation):
   if activation in neg_one_to_one:
-    return clamp_with_grad((img + 1) * 0.5, 0., 1.)
+    return ((img + 1) * 0.5).clamp(0.0, 1.0)
   else:
     return unmap_pixels(img)
 
@@ -588,7 +588,7 @@ class Imagine(nn.Module):
         pil_img.save(self.filename, quality=95, subsampling=0)
         pil_img.save(f"{self.textpath}.jpg", quality=95, subsampling=0)
         if best:
-            pil_img.save(f"{self.filename}_best.jpg", quality=95, subsampling=0)
+            pil_img.save(f"{self.textpath}_best.jpg", quality=95, subsampling=0)
 
         tqdm.write(f'image updated at "./{str(self.filename)}"')
 
