@@ -122,7 +122,7 @@ class CustomSirenWrapper(nn.Module):
 
         #From Vadim Epstein's SIREN notebook (modified)
         if fourier:
-            mgrid = self.fourier_feature_map(mgrid, fourier_maps, fourier_scale)
+            mgrid = self.fourier_feature_map(mgrid)
 
         self.register_buffer('grid', mgrid)
 
