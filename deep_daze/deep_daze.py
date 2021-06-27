@@ -222,7 +222,7 @@ class DeepDaze(nn.Module):
             K.RandomAffine(degrees=30, translate=0.1, p=0.8, padding_mode='border'),
             K.RandomPerspective(0.7,p=0.7),
             K.ColorJitter(hue=0.01, saturation=0.01, p=0.7))
-        self.noise_fac = 0.1
+        self.noise_fac = False
         
     def sample_sizes(self, lower, upper, width, gauss_mean):
         if self.gauss_sampling:
