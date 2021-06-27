@@ -34,6 +34,9 @@ from .utils import clamp_with_grad, unmap_pixels
 neg_one_to_one = [nn.Identity(), nn.Tanh(), nn.ELU(), nn.Hardtanh(), nn.LogSigmoid(), nn.RReLU(), nn.SELU(), nn.CELU(), nn.GELU(), nn.SiLU(), nn.Mish(), nn.Softsign(), nn.Tanhshrink()]
 zero_to_one = [nn.Hardsigmoid(), nn.LeakyReLU(), nn.ReLU(), nn.ReLU6(), nn.Sigmoid(), nn.Softplus()]
 
+clip_mean = [0.48145466, 0.4578275, 0.40821073]
+clip_std = [0.26862954, 0.26130258, 0.27577711]
+
 
 # Helpers
 
@@ -70,8 +73,6 @@ def rand_cutout(image, size, center_bias=False, center_focus=2):
 
 
 def create_clip_img_transform(image_width):
-    clip_mean = [0.48145466, 0.4578275, 0.40821073]
-    clip_std = [0.26862954, 0.26130258, 0.27577711]
     transform = T.Compose([
                     #T.ToPILImage(),
                     T.Resize(image_width),
@@ -259,7 +260,7 @@ class DeepDaze(nn.Module):
                 image_piece = rand_cutout(out, size, center_bias=self.center_bias, center_focus=self.center_focus)
 
                 #Implement experimental resampling.
-                if self.experimental_resample != None:
+                if exists(self.experimental_resample):
                     image_piece = resample(image_piece, (224, 224), self.experimental_resample, align_corners=False, mode='bilinear')
                 else:
                     image_piece = interpolate(image_piece, self.input_resolution)
@@ -270,18 +271,23 @@ class DeepDaze(nn.Module):
 
         if self.augment:
             #Implement augmentation.
-            image_pieces = self.augs(torch.cat(image_pieces, dim=0)).float()
+            batch = self.augs(torch.cat(image_pieces, dim=0))
 
-            #if self.noise_fac:
-            #    facs = image_pieces.new_empty([sizes, 1, 1, 1]).uniform_(0, self.noise_fac)
-            #    image_pieces = image_pieces + facs * torch.randn_like(image_pieces)
+            if self.noise_fac:
+                facs = batch.new_empty([sizes, 1, 1, 1]).uniform_(0, self.noise_fac)
+                batch = batch + facs * torch.randn_like(batch)
 
-        # normalize
-        image_pieces = torch.cat([self.normalize_image(piece) for piece in image_pieces])
+            # normalize
+            batch = T.Normalize(mean=clip_mean, std=clip_std)
+
+        else:
+            # normalize
+            image_pieces = torch.cat([self.normalize_image(piece) for piece in image_pieces]) +
+            batch = image_pieces
         
         # calc image embedding
         with autocast(enabled=False):
-            image_embed = self.perceptor.encode_image(image_pieces).float()
+            image_embed = self.perceptor.encode_image(batch).float()
             
         # calc loss
         # loss over averaged features of cutouts
