@@ -271,7 +271,7 @@ class DeepDaze(nn.Module):
 
         if self.augment:
             #Implement augmentation.
-            batch = self.augs(torch.cat(image_pieces, dim=0).float())
+            batch = self.augs(torch.cat(image_pieces, dim=0))
 
             if self.noise_fac:
                 facs = batch.new_empty([sizes, 1, 1, 1]).uniform_(0, self.noise_fac)
