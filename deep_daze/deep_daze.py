@@ -23,6 +23,7 @@ from tqdm import trange, tqdm
 from .clip import load, tokenize
 from .resample import resample
 from .moresiren import CustomSirenNet, CustomActivation, CustomSirenWrapper
+from .utils import clamp_with_grad, unmap_pixels
 
 
 # Helpers
@@ -97,8 +98,11 @@ def open_folder(path):
         pass
 
 
-def norm_siren_output(img):
-    return ((img + 1) * 0.5).clamp(0.0, 1.0)
+def norm_siren_output(img, unmap=False):
+    if unmap:
+        return unmap_pixels((img + 1) * 0.5)
+    else:
+        return ((img + 1) * 0.5).clamp(0.0, 1.0)
 
 
 def create_text_path(context_length, text=None, img=None, encoding=None, separator=None):
@@ -197,6 +201,7 @@ class DeepDaze(nn.Module):
         self.center_focus = center_focus
         self.averaging_weight = averaging_weight
         self.experimental_resample = experimental_resample
+        self.unmap = True if final_activation == nn.Sigmoid() else False
         
     def sample_sizes(self, lower, upper, width, gauss_mean):
         if self.gauss_sampling:
@@ -212,7 +217,7 @@ class DeepDaze(nn.Module):
 
     def forward(self, text_embed, return_loss=True, dry_run=False):
         out = self.model()
-        out = norm_siren_output(out)
+        out = norm_siren_output(out, unmap=self.unmap)
 
         if not return_loss:
             return out
@@ -537,7 +542,7 @@ class Imagine(nn.Module):
                 out, loss = self.model(self.clip_encoding)
             loss = loss / self.gradient_accumulate_every
             total_loss += loss
-            self.scaler.scale(loss).backward()    
+            self.scaler.scale(loss).backward() 
         out = out.cpu().float().clamp(0., 1.)
         self.scaler.step(self.optimizer)
         self.scaler.update()

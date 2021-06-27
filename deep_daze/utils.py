@@ -24,3 +24,24 @@ def ramp(ratio, width):
         out[i] = cur
         cur += ratio
     return torch.cat([-out[1:].flip([0]), out])[1:-1]
+
+#clamp_with_grad
+
+class ClampWithGrad(torch.autograd.Function):
+    @staticmethod
+    def forward(ctx, input, min, max):
+        ctx.min = min
+        ctx.max = max
+        ctx.save_for_backward(input)
+        return input.clamp(min, max)
+
+    @staticmethod
+    def backward(ctx, grad_in):
+        input, = ctx.saved_tensors
+        return grad_in * (grad_in * (input - input.clamp(ctx.min, ctx.max)) >= 0), None, None
+
+
+clamp_with_grad = ClampWithGrad.apply
+
+def unmap_pixels(x, logit_laplace_eps=0.1):
+    return clamp_with_grad((x - logit_laplace_eps) / (1 - 2 * logit_laplace_eps), 0, 1)
