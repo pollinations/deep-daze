@@ -367,7 +367,7 @@ class Imagine(nn.Module):
 
         # Load CLIP
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        clip_perceptor, norm = load(model_name, jit=jit, device=self.device, clip_activation=clip_activation)
+        clip_perceptor, norm = load(model_name, jit=jit, device=self.device)
         self.perceptor = clip_perceptor.eval()
         for param in self.perceptor.parameters():
             param.requires_grad = False
