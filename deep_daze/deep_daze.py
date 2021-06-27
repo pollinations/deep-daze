@@ -269,19 +269,14 @@ class DeepDaze(nn.Module):
             image_pieces = [interpolate(out.clone(), self.input_resolution) for _ in sizes]
 
         if self.augment:
-            #Implement augmentation.
-            image_pieces = self.augs(torch.cat(image_pieces, dim=0))
-
-            if self.noise_fac:
-                facs = image_pieces.new_empty([sizes, 1, 1, 1]).uniform_(0, self.noise_fac)
-                image_pieces = image_pieces + facs * torch.randn_like(image_pieces)
+            
 
         # normalize
         image_pieces = torch.cat([self.normalize_image(piece) for piece in image_pieces])
         
         # calc image embedding
         with autocast(enabled=False):
-            image_embed = self.perceptor.encode_image(image_pieces)
+            image_embed = self.perceptor.encode_image(image_pieces).float()
             
         # calc loss
         # loss over averaged features of cutouts
