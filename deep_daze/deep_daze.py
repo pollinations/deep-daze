@@ -225,7 +225,7 @@ class DeepDaze(nn.Module):
 
     def forward(self, text_embed, return_loss=True, dry_run=False):
         out = self.model()
-        out = norm_siren_output(out)
+        out = norm_siren_output(out, self.final_activation)
 
         if not return_loss:
             return out
@@ -429,7 +429,7 @@ class Imagine(nn.Module):
             self.optimizer = torch.optim.Adam(siren_params, lr)
         elif optimizer == "DiffGrad":
             self.optimizer = DiffGrad(siren_params, lr)
-        
+
         self.gradient_accumulate_every = gradient_accumulate_every
         self.save_every = save_every
         self.save_date_time = save_date_time
