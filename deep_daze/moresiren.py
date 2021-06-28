@@ -123,7 +123,7 @@ class CustomSirenWrapper(nn.Module):
         modulate = exists(self.modulator)
         assert not (modulate ^ exists(latent)), 'latent vector must be only supplied if `latent_dim` was passed in on instantiation'
 
-        mods = enable(modulate, self.modulator(latent))
+        mods = self.modulator(latent) if modulate else None
 
         coords = self.grid.clone().detach().requires_grad_()
         out = self.net(coords, mods)
