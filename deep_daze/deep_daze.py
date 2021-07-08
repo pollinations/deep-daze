@@ -105,10 +105,10 @@ def open_folder(path):
 
 
 def norm_siren_output(img, activation):
-  if activation in neg_one_to_one:
-    return ((img + 1) * 0.5).clamp(0.0, 1.0)
-  else:
-    return unmap_pixels(img)
+  #if activation in neg_one_to_one:
+  return ((img + 1) * 0.5).clamp(0.0, 1.0)
+  #else:
+  #  return unmap_pixels(img)
 
 
 def create_text_path(context_length, text=None, img=None, encoding=None, separator=None):
