@@ -31,6 +31,7 @@ class MFN(nn.Module):
             n_layers=4,
             input_scale=image_width,
             weight_scale=1,
+            output_act=True
         )
 
         tensors = [torch.linspace(-1, 1, steps = image_width), torch.linspace(-1, 1, steps = image_height)]
