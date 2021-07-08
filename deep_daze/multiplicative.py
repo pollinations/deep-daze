@@ -26,10 +26,10 @@ class MFN(nn.Module):
 
         self.model = GaborNet(
             in_size=2,
-            hidden_size=256,
+            hidden_size=768,
             out_size=3,
             n_layers=3,
-            input_scale=256,
+            input_scale=image_width,
             weight_scale=1,
         )
 
