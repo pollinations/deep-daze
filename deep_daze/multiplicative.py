@@ -50,9 +50,9 @@ class MFN(nn.Module):
     def forward(self, img = None, *, latent = None):
         coords = self.grid.clone().detach().requires_grad_()
         out = self.model(coords)
-        print("pre shape",out.shape)
+        # print("pre shape",out.shape)
         out = rearrange(out, '(h w) c -> () c h w', h = self.image_height, w = self.image_width)
-        print("post shape",out.shape)
+        # print("post shape",out.shape)
         if exists(img):
             return F.mse_loss(img, out)
 
