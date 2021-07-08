@@ -212,7 +212,7 @@ class DeepDaze(nn.Module):
     def forward(self, text_embed, return_loss=True, dry_run=False):
         out = self.model()
         print("out",out)
-        out = norm_siren_output(out, self.final_activation)
+        # out = norm_siren_output(out, self.final_activation)
 
         if not return_loss:
             return out
