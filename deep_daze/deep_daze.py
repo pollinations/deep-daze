@@ -23,6 +23,7 @@ from tqdm import trange, tqdm
 from .clip import load, tokenize
 from .resample import resample
 from .moresiren import CustomSirenNet, CustomActivation, CustomSirenWrapper
+from .multiplicative import MFN
 from .utils import clamp_with_grad, unmap_pixels, exists, enable
 
 #functions lists.
@@ -176,22 +177,9 @@ class DeepDaze(nn.Module):
         w0 = default(theta_hidden, 30.)
         w0_initial = default(theta_initial, 30.)
 
-        siren = CustomSirenNet(
-            dim_in=2,
-            dim_hidden=hidden_size,
-            num_layers=num_layers,
-            dim_out=3,
-            use_bias=True,
-            w0=w0,
-            w0_initial=w0_initial,
-            layer_activation=layer_activation,
-            final_activation=final_activation,
-            num_linears=num_linears,
-            multiply=multiply
-        )
 
-        self.model = CustomSirenWrapper(
-            siren,
+
+        self.model = MFN(
             image_width=image_width,
             image_height=image_width
         )
