@@ -17,7 +17,7 @@ def cast_tuple(val, repeat = 1):
 #May need to adjust std for optimal performance
 class FourierFeatures(nn.Module):
     def __init__(self, in_features, out_features, std=1.):
-        super()__init()
+        super().__init__()
         assert out_features % 2 == 0
         self.register_buffer('weight', torch.randn([out_features // 2, in_features]) * std)
 
