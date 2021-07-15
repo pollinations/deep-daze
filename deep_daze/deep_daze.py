@@ -7,9 +7,9 @@ from pathlib import Path
 
 import torch
 import torch.nn.functional as F
-from torch import nn
+import torch_optimizer as opt
+from torch import nn, optim
 from torch.cuda.amp import GradScaler, autocast
-from torch_optimizer import DiffGrad, AdamP
 import numpy as np
 
 from PIL import Image
@@ -174,6 +174,7 @@ class DeepDaze(nn.Module):
         self.layer_activation = layer_activation
         self.final_activation = final_activation
         self.num_linears = num_linears
+        self.norm_type = norm_type
 
         w0 = default(theta_hidden, 30.)
         w0_initial = default(theta_initial, 30.)
@@ -225,7 +226,7 @@ class DeepDaze(nn.Module):
 
     def forward(self, text_embed, return_loss=True, dry_run=False):
         out = self.model()
-        out = norm_siren_output(out, self.final_activation, norm_type=norm_type)
+        out = norm_siren_output(out, norm_type=self.norm_type)
 
         if not return_loss:
             return out
@@ -319,7 +320,7 @@ class Imagine(nn.Module):
             do_cutout=True,
             center_bias=False,
             center_focus=2,
-            optimizer="AdamP",
+            optimizer=opt.AdamP,
             jit=True,
             hidden_size=256,
             save_gif=False,
@@ -429,12 +430,7 @@ class Imagine(nn.Module):
         self.scaler = GradScaler()
         siren_params = model.model.parameters()
 
-        if optimizer == "AdamP":
-            self.optimizer = AdamP(siren_params, lr)
-        elif optimizer == "Adam":
-            self.optimizer = torch.optim.Adam(siren_params, lr)
-        elif optimizer == "DiffGrad":
-            self.optimizer = DiffGrad(siren_params, lr)
+        self.optimizer = optimizer(siren_params, lr)
 
         self.gradient_accumulate_every = gradient_accumulate_every
         self.save_every = save_every
