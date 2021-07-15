@@ -7,7 +7,6 @@ from pathlib import Path
 
 import torch
 import torch.nn.functional as F
-from siren_pytorch import SirenNet, SirenWrapper
 from torch import nn
 from torch.cuda.amp import GradScaler, autocast
 from torch_optimizer import DiffGrad, AdamP
@@ -17,12 +16,11 @@ from PIL import Image
 from imageio import imread, mimsave
 import torchvision.transforms as T
 
-
 from tqdm import trange, tqdm
 
 from .clip import load, tokenize
 from .resample import resample
-from .moresiren import CustomSirenNet, CustomActivation, CustomSirenWrapper
+from .siren import SirenNetwork, LayerActivation, SirenWrapper
 from .utils import clamp_with_grad, unmap_pixels, exists, enable
 
 #functions lists.
@@ -103,11 +101,14 @@ def open_folder(path):
         pass
 
 
-def norm_siren_output(img, activation):
-  if activation in neg_one_to_one:
-    return ((img + 1) * 0.5).clamp(0.0, 1.0)
-  else:
-    return unmap_pixels(img)
+def norm_siren_output(img, norm_type):
+    assert norm_type in ["none", "clamp", "unmap"], "Invalid normalization type"
+    if norm_type == "none":
+        return img
+    elif norm_type == "clamp":
+        return ((img + 1) * 0.5).clamp(0.0, 1.0)
+    else:
+        return unmap_pixels(img)
 
 
 def create_text_path(context_length, text=None, img=None, encoding=None, separator=None):
@@ -154,7 +155,8 @@ class DeepDaze(nn.Module):
             layer_activation=None,
             final_activation=nn.Identity(),
             num_linears=1,
-            multiply=None
+            multiply=None,
+            norm_type="unmap"
     ):
         super().__init__()
         # load clip
@@ -176,7 +178,7 @@ class DeepDaze(nn.Module):
         w0 = default(theta_hidden, 30.)
         w0_initial = default(theta_initial, 30.)
 
-        siren = CustomSirenNet(
+        siren = SirenNetwork(
             dim_in=2,
             dim_hidden=hidden_size,
             num_layers=num_layers,
@@ -190,7 +192,7 @@ class DeepDaze(nn.Module):
             multiply=multiply
         )
 
-        self.model = CustomSirenWrapper(
+        self.model = SirenWrapper(
             siren,
             image_width=image_width,
             image_height=image_width
@@ -223,7 +225,7 @@ class DeepDaze(nn.Module):
 
     def forward(self, text_embed, return_loss=True, dry_run=False):
         out = self.model()
-        out = norm_siren_output(out, self.final_activation)
+        out = norm_siren_output(out, self.final_activation, norm_type=norm_type)
 
         if not return_loss:
             return out
@@ -329,7 +331,8 @@ class Imagine(nn.Module):
             final_activation="identity",
             num_linears=1,
             multiply=None,
-            clip_activation=nn.ReLU(inplace=True)
+            clip_activation=nn.ReLU(inplace=True),
+            norm_type="unmap"
     ):
 
         super().__init__()
@@ -419,7 +422,8 @@ class Imagine(nn.Module):
                 layer_activation=layer_activation,
                 final_activation=final_activation,
                 num_linears=num_linears,
-                multiply=multiply
+                multiply=multiply,
+                norm_type=norm_type
             ).to(self.device)
         self.model = model
         self.scaler = GradScaler()
