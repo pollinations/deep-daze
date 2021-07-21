@@ -31,7 +31,7 @@ class MFN(nn.Module):
             n_layers=2,
             input_scale=image_width,
             weight_scale=1,
-            output_act=False
+            output_act=nn.tanh
         )
 
         tensors = [torch.linspace(-1, 1, steps = image_width), torch.linspace(-1, 1, steps = image_height)]

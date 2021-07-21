@@ -157,7 +157,7 @@ class DeepDaze(nn.Module):
             final_activation=nn.Identity(),
             num_linears=1,
             multiply=None,
-            norm_type="unmap",
+            norm_type="clamp",
             fourier=False
     ):
         super().__init__()
@@ -322,7 +322,7 @@ class Imagine(nn.Module):
             num_linears=1,
             multiply=None,
             clip_activation=nn.ReLU(inplace=True),
-            norm_type="unmap",
+            norm_type="clamp",
             fourier=False
     ):
 
