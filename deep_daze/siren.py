@@ -25,7 +25,6 @@ class FourierFeatures(nn.Module):
         f = 2 * math.pi * input @ self.weight.T
         return torch.cat([f.cos(), f.sin()], dim=-1)
 
-
 #Custom activation. Will it work? ¯\_(ツ)_/¯
 
 class LayerActivation(nn.Module):
@@ -74,27 +73,40 @@ class SirenLayer(nn.Module):
 
 #because I don't wanna do 2 repos, here's a more "open" SirenNet class, and by that I mean just changing activations on the layers themselves lol
 class SirenNetwork(nn.Module):
-    def __init__(self, dim_in, dim_hidden, dim_out, num_layers, w0 = 1., w0_initial = 30., use_bias = True, layer_activation = None, final_activation = None, num_linears = 1, multiply=None):
+    def __init__(self, dim_in, dim_hidden, dim_out, num_layers, w0 = 1., w0_initial = 30., use_bias = True, layer_activation = None, final_activation = None, num_linears = 1, multiply=None, fourier=True):
         super().__init__()
         self.num_layers = num_layers
         self.dim_hidden = dim_hidden
 
         self.layers = nn.ModuleList([])
-        for ind in range(num_layers):
-            is_first = ind == 0
-            layer_w0 = w0_initial if is_first else w0
-            layer_dim_in = dim_in if is_first else dim_hidden
 
+        #Fourier
+        if fourier:
+          self.layers.append(FourierFeatures(
+            in_features = dim_in,
+            out_features = dim_hidden
+          ))
+        else:
+          self.layers.append(SirenLayer(
+            dim_in = dim_in,
+            dim_out = dim_hidden,
+            w0 = w0_initial,
+            use_bias = use_bias,
+            is_first = True,
+            layer_activation = None if not exists(layer_activation) else LayerActivation(torch_activation=layer_activation),
+            num_linears=num_linears
+          ))
+
+        for ind in range(num_layers - 1):
             self.layers.append(SirenLayer(
-                dim_in = layer_dim_in,
+                dim_in = dim_hidden,
                 dim_out = dim_hidden,
-                w0 = layer_w0,
+                w0 = w0,
                 use_bias = use_bias,
-                is_first = is_first,
                 layer_activation = None if not exists(layer_activation) else LayerActivation(torch_activation=layer_activation),
                 num_linears=num_linears
             ))
-
+        
         final_activation = nn.Identity() if not exists(final_activation) else final_activation
         self.last_layer = SirenLayer(dim_in = dim_hidden, dim_out = dim_out, w0 = w0, use_bias = use_bias, final_activation = final_activation, multiply=multiply)
 
@@ -145,5 +157,3 @@ class SirenWrapper(nn.Module):
 
         if exists(img):
             return F.mse_loss(img, out)
-
-        return out

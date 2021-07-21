@@ -156,7 +156,8 @@ class DeepDaze(nn.Module):
             final_activation=nn.Identity(),
             num_linears=1,
             multiply=None,
-            norm_type="unmap"
+            norm_type="unmap",
+            fourier=False
     ):
         super().__init__()
         # load clip
@@ -190,7 +191,8 @@ class DeepDaze(nn.Module):
             layer_activation=layer_activation,
             final_activation=final_activation,
             num_linears=num_linears,
-            multiply=multiply
+            multiply=multiply,
+            fourier=fourier
         )
 
         self.model = SirenWrapper(
@@ -333,7 +335,8 @@ class Imagine(nn.Module):
             num_linears=1,
             multiply=None,
             clip_activation=nn.ReLU(inplace=True),
-            norm_type="unmap"
+            norm_type="unmap",
+            fourier=False
     ):
 
         super().__init__()
@@ -424,7 +427,8 @@ class Imagine(nn.Module):
                 final_activation=final_activation,
                 num_linears=num_linears,
                 multiply=multiply,
-                norm_type=norm_type
+                norm_type=norm_type,
+                fourier=fourier
             ).to(self.device)
         self.model = model
         self.scaler = GradScaler()
