@@ -22,6 +22,7 @@ from .clip import load, tokenize
 from .resample import resample
 from .siren import SirenNetwork, LayerActivation, SirenWrapper
 from .utils import clamp_with_grad, unmap_pixels, exists, enable
+from .multiplicative import MFN
 
 #functions lists.
 #Some final activation functions have outputs from range [-1, 1] and others have from range [0, 1].
