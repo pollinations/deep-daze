@@ -157,3 +157,5 @@ class SirenWrapper(nn.Module):
 
         if exists(img):
             return F.mse_loss(img, out)
+
+        return out
